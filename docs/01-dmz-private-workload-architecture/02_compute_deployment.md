@@ -121,7 +121,8 @@ Die VM wird über den Azure-Portal-Assistenten **Create a virtual machine** ange
 ### 4.6 Review + create
 
 * Konfiguration prüfen — insbesondere Resource Group, Virtual Network und Subnet gegen die Tabelle in Abschnitt 1 abgleichen — und **Create** wählen.
-
+* Beim Klick auf Create generiert Azure automatisch ein Schlüsselpaar und öffnet zwingend einen Dialog mit der Schaltfläche **Download private key and create resource**. Erst dieser Klick startet das eigentliche Deployment – die `.pem-` Datei muss in diesem Moment lokal gespeichert werden, da sie danach nicht erneut bereitgestellt wird.
+  
 ---
 
 ## 5. Web-VM im Azure Portal erstellen
@@ -149,7 +150,7 @@ Analog zur Edge-VM, jedoch **ohne** öffentliche IP.
 
 ### 5.2 Disks
 
-* **OS disk type:** analog zur Edge-VM (siehe Abschnitt 4.2) — Standard SSD (LRS) empfohlen, Portal-Standard ggf. Premium SSD (LRS).
+* **OS disk type:** analog zur Edge-VM (siehe Abschnitt 4.2) —  Premium SSD (LRS).
 * **Delete OS disk with VM:** Enabled
 * **Use managed disks:** Yes
 * **Ephemeral OS disk:** None
@@ -173,7 +174,7 @@ Analog zur Edge-VM, jedoch **ohne** öffentliche IP.
 ### 5.5 Review + create
 
 * Konfiguration prüfen — insbesondere dass Resource Group und Virtual Network mit denen der Edge-VM übereinstimmen — und **Create** wählen.
-
+* Auch hier fordert Azure beim Klick auf **Create** zunächst den Download des generierten privaten Schlüssels. Die heruntergeladene `.pem`-Datei für die Web-VM ebenfalls sichern.
 ---
 
 ## 6. Kontrolle nach der Bereitstellung
@@ -193,7 +194,7 @@ Nach Abschluss beider Deployments sollte geprüft werden, dass ausschließlich d
 
 ### 6.2 Verifikation via Azure CLI
 
-Das folgende Skript prüft die Konfiguration automatisiert und meldet je Prüfpunkt `OK` oder `FEHLER`. Variablen im Kopf einmalig anpassen — insbesondere `PIP_EDGE` an den tatsächlich verwendeten Public-IP-Namen (siehe Hinweis unten).
+Das folgende Skript prüft die Konfiguration automatisiert und meldet je Prüfpunkt `OK` oder `FEHLER`. Variablen im Header einmalig anpassen.
 
 ```bash
 #!/usr/bin/env bash
