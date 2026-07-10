@@ -7,7 +7,7 @@
 > * Subscription: `<subscription>`
 > * Region: `<azure-region>`
 > * Resource Group: `rg-<project>-<environment>-<region>`
-> * Betriebssystem beider VMs: **Debian 12 „Bookworm“** (Befehle in diesem Kapitel sind auf Debian/Ubuntu-Derivate mit `apt` und `systemd` ausgelegt)
+> * Betriebssystem beider VMs: **Ubuntu Server 24.04 LTS oder Debian 12 „Bookworm“** (Befehle in diesem Kapitel sind auf Debian/Ubuntu-Derivate mit `apt` und `systemd` ausgelegt)
 
 ## 1. Voraussetzungsprüfung: Zugriff aus Kapitel 02
 
@@ -182,9 +182,73 @@ ssh web-vm
 
 Alle folgenden Schritte werden **auf jeder VM separat** ausgeführt, sofern nicht anders vermerkt.
 
-## 4. SSH-Hardening
+## 4. Pakete beschaffen (fail2ban, python3-systemd, ufw)
 
-### 4.1 Konfiguration anpassen
+Da die Web-VM keinen ausgehenden Internetzugriff hat, werden **alle** in diesem Kapitel benötigten Pakete (`fail2ban`, `python3-systemd`, `ufw`) **einmalig gemeinsam** über die Edge-VM heruntergeladen und dann in **einem** Transfer zur Web-VM übertragen. Auf der Edge-VM selbst reicht die normale Online-Installation.
+
+### 4.1 Edge-VM: Online installieren
+
+```bash
+sudo apt update
+sudo apt install -y fail2ban python3-systemd ufw
+```
+
+### 4.2 Edge-VM: Pakete zusätzlich als .deb sammeln (für die Web-VM)
+
+```bash
+mkdir -p ~/offline-pkgs
+cd ~/offline-pkgs
+sudo apt-get install --reinstall --download-only -y fail2ban python3-systemd ufw
+sudo cp /var/cache/apt/archives/*.deb ~/offline-pkgs/
+ls ~/offline-pkgs/*.deb
+```
+
+### 4.3 Vom lokalen Rechner: einmal von Edge-VM abholen
+
+**Linux (lokal):**
+
+```bash
+scp -i <pfad-zur-edge-vm>.pem <admin-username-edge>@<edge-public-ip>:~/offline-pkgs/*.deb .
+```
+
+**Windows (PowerShell, lokal):**
+
+```powershell
+scp -i '<pfad-zur-edge-vm>.pem' <admin-username-edge>@<edge-public-ip>:~/offline-pkgs/*.deb .
+```
+
+### 4.4 Vom lokalen Rechner: einmal zur Web-VM weiterreichen
+
+**Linux (lokal):**
+
+```bash
+scp -i <pfad-zur-web-vm>.pem \
+  -o "ProxyCommand=ssh -i <pfad-zur-edge-vm>.pem -W %h:%p <admin-username-edge>@<edge-public-ip>" \
+  *.deb <admin-username-web>@<web-private-ip>:/tmp/
+```
+
+**Windows (PowerShell, lokal):**
+
+```powershell
+scp -i '<pfad-zur-web-vm>.pem' -o "ProxyCommand=ssh -i <pfad-zur-edge-vm>.pem -W %h:%p <admin-username-edge>@<edge-public-ip>" *.deb <admin-username-web>@<web-private-ip>:/tmp/
+```
+
+> So bleibt der Web-Key ausschließlich auf dem lokalen Rechner; er wird weder auf der Edge-VM abgelegt noch verlässt der Edge-Key den lokalen Rechner in Richtung Web-VM.
+
+### 4.5 Web-VM: alle Pakete gemeinsam installieren
+
+```bash
+cd /tmp
+sudo dpkg -i *.deb
+sudo apt install -f -y
+```
+
+---
+
+## 5. SSH-Hardening
+
+### 5.1 Konfiguration anpassen
+
 
 Auf **beiden VMs**:
 
@@ -207,7 +271,7 @@ AllowUsers <admin-username>
 
 > **Hinweis zu `AllowUsers`:** Schränkt SSH-Logins auf den angegebenen Benutzer ein. Optional, aber empfohlen, da so auch bei einem versehentlich angelegten Zusatzkonto kein SSH-Zugriff möglich ist.
 
-### 4.2 Konfiguration testen und Dienst neu laden
+### 5.2 Konfiguration testen und Dienst neu laden
 
 ```bash
 sudo sshd -t
@@ -221,7 +285,7 @@ sudo systemctl reload ssh
 
 > **Wichtig:** Vor dem Schließen der aktuellen SSH-Sitzung in einer **zweiten, separaten** Sitzung verifizieren, dass der Login weiterhin funktioniert (§3.1 bzw. §3.2). So wird ein Aussperren durch einen Konfigurationsfehler vermieden.
 
-### 4.3 Verifikation
+### 5.3 Verifikation
 
 ```bash
 sudo sshd -T | grep -Ei "permitrootlogin|passwordauthentication|pubkeyauthentication|challengeresponseauthentication|kbdinteractiveauthentication|x11forwarding|allowusers"
@@ -240,67 +304,12 @@ allowusers <admin-user>
 
 ---
 
-Verstehe das Missverständnis: Du wolltest keine "Variante A vs. B" für zwei verschiedene Installationswege, sondern innerhalb der einen (Offline-)Installation bei jedem Kopierschritt einfach die Befehle für Linux **und** Windows nebeneinander. Hier die korrigierte Fassung ohne die künstliche A/B-Aufteilung:
 
----
+## 6. fail2ban
 
-## 5. fail2ban
+### 6.1 Konfiguration
 
-### 5.1 Installation
-
-**Hinweis:** Die Web-VM hat keine öffentliche IP und ohne NAT Gateway keinen ausgehenden Internetzugriff. Installation daher offline über die Edge-VM als Zwischenstation.
-
-**Schritt 1 — Paket auf der Edge-VM herunterladen** (dort per SSH eingeloggt):
-```bash
-mkdir -p ~/fail2ban-deb
-cd ~/fail2ban-deb
-apt-get install --reinstall --download-only -y fail2ban
-cp /var/cache/apt/archives/*.deb ~/fail2ban-deb/
-```
-Falls das Paket bereits installiert ist und keine .deb erzeugt wird, alternativ:
-```bash
-apt-get download fail2ban
-```
-
-**Schritt 2 — Datei von der Edge-VM zum lokalen Rechner holen** (nur Edge-Key nötig):
-
-Linux:
-```bash
-scp -i <pfad-zur-edge-vm>.pem <admin-username-edge>@<edge-public-ip>:~/fail2ban-deb/fail2ban*.deb .
-```
-
-Windows (PowerShell):
-```powershell
-scp -i '<pfad-zur-edge-vm>.pem' <admin-username-edge>@<edge-public-ip>:~/fail2ban-deb/fail2ban*.deb .
-```
-
-**Schritt 3 — Datei vom lokalen Rechner über die Edge-VM zur Web-VM weiterreichen** (nur Web-Key nötig, Edge-Key dient nur als Proxy):
-
-Linux:
-```bash
-scp -i <pfad-zur-web-vm>.pem \
-  -o "ProxyCommand=ssh -i <pfad-zur-edge-vm>.pem -W %h:%p <admin-username-edge>@<edge-public-ip>" \
-  fail2ban*.deb <admin-username-web>@<web-private-ip>:/tmp/
-```
-
-Windows (PowerShell):
-```powershell
-scp -i '<pfad-zur-web-vm>.pem' -o "ProxyCommand=ssh -i <pfad-zur-edge-vm>.pem -W %h:%p <admin-username-edge>@<edge-public-ip>" .\fail2ban*.deb <admin-username-web>@<web-private-ip>:/tmp/
-```
-
-So bleibt der Web-Key ausschließlich auf dem lokalen Rechner.
-
-**Schritt 4 — Installation auf der Web-VM:**
-```bash
-cd /tmp
-sudo dpkg -i fail2ban*.deb
-sudo apt install -f -y
-```
-
-
-## 5.2 Konfiguration
-
-Auf beiden VMs:
+Auf **beiden VMs**:
 
 ```bash
 sudo tee /etc/fail2ban/jail.local > /dev/null << 'EOF'
@@ -323,14 +332,15 @@ EOF
 | `findtime` | `10m` | Zeitfenster, in dem die 5 Versuche gezählt werden |
 | `bantime` | `1h` | Moderate Sperrzeit; bei Bedarf auf `bantime = -1` (permanent) erhöhen |
 
-## 5.3 Dienst aktivieren
+## 6.2 Dienst aktivieren
 
 **Auf beiden VMs:**
+
 ```bash
 sudo systemctl enable --now fail2ban
 ```
 
-## 5.4 Verifikation
+## 6.3 Verifikation
 
 **Auf beiden VMs:**
 ```bash
@@ -351,4 +361,211 @@ Status for the jail: sshd
    |- Currently banned: 0
    |- Total banned:     0
    `- Banned IP list:
+```
+
+## 7. UFW (host-basierte Firewall)
+
+> **Warnung:** UFW wird **über eine bestehende SSH-Sitzung** konfiguriert. Die SSH-Regel muss **vor** dem Aktivieren von UFW gesetzt werden, sonst sperrt man sich selbst aus.
+
+### 7.1 Regeln – Edge-VM
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+sudo ufw allow from <admin-ip> to any port 22 proto tcp
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+```
+
+### 7.2 Regeln – Web-VM
+
+Für die UFW-Regeln der Web-VM wird die private IP der Edge-VM benötigt:
+
+```bash
+az vm list-ip-addresses \
+  -g rg-<project>-<environment>-<region> \
+  -n vm-<project>-edge-01
+```
+
+Der Wert unter `privateIpAddresses` ist `<edge-private-ip>` in den folgenden Abschnitten.
+
+```bash
+sudo ufw default deny incoming
+sudo ufw default allow outgoing
+
+sudo ufw allow from <edge-private-ip> to any port 22 proto tcp
+sudo ufw allow from <edge-private-ip> to any port 80 proto tcp
+sudo ufw allow from <edge-private-ip> to any port 443 proto tcp
+```
+
+### 7.3 Aktivieren
+
+Auf **beiden VMs**, jeweils erst nachdem die SSH-Regel gesetzt ist:
+
+```bash
+sudo ufw enable
+```
+
+Sicherheitsabfrage mit `y` bestätigen.
+
+### 7.4 Verifikation
+
+```bash
+sudo ufw status verbose
+```
+
+Erwartetes Ergebnis Edge-VM (Auszug):
+
+```
+Status: active
+To                         Action      From
+22/tcp                     ALLOW       <admin-ip>
+80/tcp                     ALLOW       Anywhere
+443/tcp                    ALLOW       Anywhere
+```
+
+Erwartetes Ergebnis Web-VM (Auszug):
+
+```
+Status: active
+To                         Action      From
+22/tcp                     ALLOW       <edge-private-ip>
+80/tcp                     ALLOW       <edge-private-ip>
+443/tcp                    ALLOW       <edge-private-ip>
+```
+
+---
+
+## 7.5 Edge-VM — Lockout durch geänderte Admin-IP
+
+Ändert sich die öffentliche IP des Admin-Rechners (z. B. durch dynamische IP-Vergabe, Netzwerkwechsel, VPN), greift die UFW-Regel auf der Edge-VM nicht mehr, da dort noch die alte IP hinterlegt ist. Da UFW den SSH-Zugriff blockiert, ist eine Korrektur per normalem SSH nicht mehr möglich — die Regel muss über Azure Run-Command (unabhängig von Netzwerk/UFW) korrigiert werden.
+
+```bash
+az vm run-command invoke \
+  -g rg-<project>-<environment>-<region> \
+  -n vm-<project>-edge-01 \
+  --command-id RunShellScript \
+  --scripts "ufw delete allow from <alte-admin-ip> to any port 22 proto tcp; ufw allow from <neue-admin-ip> to any port 22 proto tcp"
+```
+
+Falls das nicht greift, ersatzweise UFW komplett deaktivieren:
+
+```bash
+az vm run-command invoke \
+  -g rg-<project>-<environment>-<region> \
+  -n vm-<project>-edge-01 \
+  --command-id RunShellScript \
+  --scripts "ufw disable"
+```
+
+---
+
+## 7.6 Web-VM — Lockout durch Fehlkonfiguration
+
+Die Web-VM-Regel referenziert `<edge-private-ip>` — eine statische private IP, die sich nicht routinemäßig ändert. Ein Lockout hier entsteht typischerweise durch Fehlkonfiguration (falsche IP, gelöschte Regel, `ufw enable` ohne vorherige SSH-Regel).
+
+```bash
+az vm run-command invoke \
+  -g rg-<project>-<environment>-<region> \
+  -n vm-<project>-web-01 \
+  --command-id RunShellScript \
+  --scripts "ufw allow from <edge-private-ip> to any port 22 proto tcp"
+```
+
+Falls das nicht greift, ersatzweise UFW komplett deaktivieren:
+
+```bash
+az vm run-command invoke \
+  -g rg-<project>-<environment>-<region> \
+  -n vm-<project>-web-01 \
+  --command-id RunShellScript \
+  --scripts "ufw disable"
+```
+
+---
+
+## 7.7 Danach auf OS-Ebene (per SSH, sobald Zugriff wieder funktioniert)
+
+Gilt für beide VMs:
+
+```bash
+sudo ufw status numbered
+```
+
+Regeln korrigieren:
+
+```bash
+sudo ufw allow from <korrekte-ip> to any port 22 proto tcp
+sudo ufw delete <zeilennummer-alte-regel>
+```
+
+Erst danach wieder aktivieren:
+
+```bash
+sudo ufw enable
+```
+
+Verifizieren:
+
+```bash
+sudo ufw status verbose
+```
+
+
+---
+
+## 8. Gesamtverifikation (Skript)
+
+Das folgende Skript fasst die die Prüfungen für die notwendigen Konfigurationen zusammen und meldet je Prüfpunkt `OK` oder `FEHLER`. Auf der jeweiligen VM ausführen (Edge-VM und Web-VM separat, mit angepasster `EXPECTED_SSH_SOURCE`):
+
+```bash
+#!/usr/bin/env bash
+set -uo pipefail
+
+EXPECTED_USER="<admin-username>"
+EXPECTED_SSH_SOURCE="<admin-ip-oder-edge-private-ip>"
+
+PASS=0
+FAIL=0
+
+ok() { echo "OK: $1"; PASS=$((PASS + 1)); }
+fail() { echo "FEHLER: $1"; FAIL=$((FAIL + 1)); }
+
+check() {
+    if eval "$2"; then
+        ok "$1"
+    else
+        fail "$1"
+    fi
+}
+
+SSHD="$(sudo sshd -T 2>/dev/null)"
+UFW="$(sudo ufw status verbose)"
+
+check "sshd-Konfiguration gültig" "sudo sshd -t >/dev/null 2>&1"
+
+for ENTRY in "permitrootlogin no" "passwordauthentication no" "pubkeyauthentication yes" "challengeresponseauthentication no" "kbdinteractiveauthentication no" "x11forwarding no"; do
+    check "$ENTRY" "echo \"$SSHD\" | grep -qi '^${ENTRY}$'"
+done
+
+check "AllowUsers = ${EXPECTED_USER}" "echo \"$SSHD\" | grep -qi '^allowusers .*${EXPECTED_USER}'"
+check "SSH-Dienst aktiv" "systemctl is-active --quiet ssh"
+
+check "fail2ban aktiv" "systemctl is-active --quiet fail2ban"
+check "fail2ban aktiviert" "systemctl is-enabled --quiet fail2ban"
+check "sshd-Jail vorhanden" "sudo fail2ban-client status sshd >/dev/null 2>&1"
+
+[[ "$(sudo fail2ban-client get sshd maxretry 2>/dev/null)" == "5" ]] && ok "maxretry = 5" || fail "maxretry = 5"
+[[ "$(sudo fail2ban-client get sshd findtime 2>/dev/null)" == "600" ]] && ok "findtime = 10m" || fail "findtime = 10m"
+[[ "$(sudo fail2ban-client get sshd bantime 2>/dev/null)" == "3600" ]] && ok "bantime = 1h" || fail "bantime = 1h"
+
+check "UFW aktiv" "echo \"$UFW\" | grep -q '^Status: active'"
+check "Default Incoming = deny" "echo \"$UFW\" | grep -qi 'Default: deny (incoming)'"
+check "Default Outgoing = allow" "echo \"$UFW\" | grep -qi 'allow (outgoing)'"
+check "SSH-Regel vorhanden" "echo \"$UFW\" | grep -Eq '22/tcp.*ALLOW.*${EXPECTED_SSH_SOURCE}'"
+
+echo "$PASS OK, $FAIL FEHLER"
+
+[ "$FAIL" -eq 0 ]
 ```
