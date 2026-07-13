@@ -1,6 +1,8 @@
 # 02 – Compute-Deployment: Edge-VM und Web-VM
 
-> **Voraussetzung:** `01_vnet_and_nsg.md` ist vollständig umgesetzt (VNet, Subnetze, NSGs, NSG-Regeln).
+> **Voraussetzung:** 
+>
+> * [01 – Virtual Network und Network Security Groups (NSG)](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/01_vnet_and_nsg.md) ist vollständig umgesetzt.
 >
 > **Beispielkonfiguration**
 >
@@ -266,4 +268,4 @@ OK      - Web-VM NIC hat KEINE eigene NSG
 | Edge-VM NIC | Subnetz `snet-dmz`, Public IP gesetzt, keine NIC-NSG |
 | Web-VM NIC | Subnetz `snet-web`, **keine** Public IP, keine NIC-NSG |
 
-> **Hinweis:** Da beide NICs ohne eigene NSG erstellt wurden, gelten ausschließlich die Subnetz-NSGs aus Kapitel 01. Damit bleibt die Zielkonfiguration konsistent zu `01_vnet_and_nsg.md`.
+> **Hinweis:** Da beide NICs ohne eigene NSG erstellt wurden, gelten ausschließlich die Subnetz-NSGs aus Kapitel 01. Damit bleibt die Zielkonfiguration konsistent zu [01 – Virtual Network und Network Security Groups (NSG)](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/01_vnet_and_nsg.md).
