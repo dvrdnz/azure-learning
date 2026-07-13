@@ -25,7 +25,7 @@ Internet
 │  └───────────────┬───────────────┘   │
 │                  │                   │
 │                  ▼                   │
-│  Private Workload Subnet            │
+│  Private Workload Subnet             │
 │  ┌───────────────────────────────┐   │
 │  │ Web VM                        │   │
 │  │ • Private IP                  │   │
