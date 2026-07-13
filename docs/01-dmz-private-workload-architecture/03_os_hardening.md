@@ -1,6 +1,6 @@
-# 03 – Hardening: SSH, fail2ban, UFW
+# 03 – OS-Hardening: SSH, fail2ban, UFW
 
-> **Voraussetzung:** `01_vnet_and_nsg.md` und `02_compute_edge_web_vm.md` sind vollständig umgesetzt (VNet, Subnetze, NSGs, Edge-VM, Web-VM).
+> **Voraussetzung:** `01_vnet_nsg.md` und `02_compute_edge_web_vm.md` sind vollständig umgesetzt (VNet, Subnetze, NSGs, Edge-VM, Web-VM).
 >
 > **Beispielkonfiguration**
 >
