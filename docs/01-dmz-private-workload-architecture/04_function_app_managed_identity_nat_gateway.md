@@ -1,6 +1,10 @@
 # 04 – Temporärer Internetzugang für die Web-VM: Function App, Managed Identity und NAT Gateway
 
-> **Voraussetzung:** `01_vnet_and_nsg.md`, `02_compute_deployment.md` und `03_hardening.md` sind vollständig umgesetzt.
+> **Voraussetzung:**
+>
+> * [01 – Virtual Network und Network Security Groups (NSG)](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/01_vnet_and_nsg.md)
+> * [02 – Compute-Deployment: Edge-VM und Web-VM](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/02_compute_deployment.md)
+> * [03 – OS-Hardening: SSH, fail2ban, UFW](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/03_os_hardening.md)
 >
 > **Beispielkonfiguration**
 >
