@@ -1,8 +1,8 @@
 # DMZ & Private Workload Architecture
 
-Dieses Projekt dokumentiert den Aufbau einer Azure-Infrastruktur mit einer öffentlich erreichbaren DMZ und einem privaten Workload-Subnetz.
+Diese Anleitung beschreibt den Aufbau einer einfachen Azure-Architektur mit einer öffentlich erreichbaren DMZ und einem privaten Workload-Subnetz. Der Lernpfad ist bewusst schrittweise aufgebaut und führt von der Netzwerkplanung über die Bereitstellung von virtuellen Maschinen bis hin zu Sicherheits- und Wartungsaspekten.
 
-Ziel ist es, eine typische mehrschichtige Infrastruktur (Multi-Tier Architecture) mit Microsoft Azure aufzubauen, zu dokumentieren und deren Komponenten nachvollziehbar zu erklären. Der Schwerpunkt liegt auf Netzwerksegmentierung, Zugriffsschutz und einem kosteneffizienten Betrieb innerhalb eines Azure-Abonnements.
+Ziel ist es, typische Azure-Konzepte nachvollziehbar zu erklären und in einer kleinen, aber realistischen Infrastruktur anzuwenden. Der Schwerpunkt liegt auf Netzwerksegmentierung, Zugriffsschutz, sicherer Konfiguration und nachvollziehbarer Dokumentation.
 
 ## Architektur
 
@@ -10,7 +10,7 @@ Ziel ist es, eine typische mehrschichtige Infrastruktur (Multi-Tier Architecture
 Internet
     │
     ▼
-Public IP
+[Public IP]
     │
     ▼
 ┌──────────────────────────────────────┐
@@ -43,23 +43,30 @@ Public IP
 - Bereitstellung virtueller Maschinen
 - Reverse Proxy mit Nginx
 - Trennung zwischen öffentlich erreichbaren und privaten Ressourcen
-- Absicherung des Netzwerkverkehrs
+- Absicherung von SSH- und Web-Zugriffen
+- Verwendung von Firewall- und Hardening-Maßnahmen auf Betriebssystemebene
+- Temporärer Internetzugang für private Workloads über NAT Gateway und Function App
 - Dokumentation einer reproduzierbaren Infrastruktur
 
-## Dokumentation
 
-| Dokument | Inhalt |
-|----------|--------|
-| 01-vnet-nsg.md | Virtual Network, Subnetze und Network Security Groups |
+## Kapitelübersicht
+
+| Kapitel | Inhalt | Fokus |
+| --- | --- | --- |
+| [01_vnet_and_nsg.md](01_vnet_and_nsg.md) | Virtual Network, Subnetze und NSGs | Netzwerkgrundlagen und Zugriffskontrolle |
+| [02_compute_deployment.md](02_compute_deployment.md) | Deployment von Edge-VM und Web-VM | Bereitstellung von Rechenressourcen |
+| [03_os_hardening.md](03_os_hardening.md) | SSH-Hardening, fail2ban und UFW | Betriebssystem-Sicherheit |
+| [04_function_app_managed_identity_nat_gateway.md](04_function_app_managed_identity_nat_gateway.md) | Temporärer Internetzugang über Function App, Managed Identity und NAT Gateway | Wartungszugang und Least-Privilege-Konzept |
+
 
 
 ## Architekturprinzipien
 
 - Private Workloads erhalten keine öffentliche IP-Adresse.
-- Der gesamte externe Datenverkehr wird ausschließlich über die DMZ verarbeitet.
-- Zugriffe zwischen den Subnetzen werden ausschließlich über Network Security Groups gesteuert.
-- Komponenten werden nach dem Prinzip der minimalen Rechte (Least Privilege) konfiguriert.
-- Infrastruktur und Konfiguration werden vollständig dokumentiert.
+- Externer Datenverkehr wird ausschließlich über die DMZ verarbeitet.
+- Zugriffskontrolle erfolgt primär über NSGs und zusätzliche Host-Firewalls.
+- Komponenten werden nach dem Prinzip der minimalen Rechte konfiguriert.
+- Infrastruktur und Konfiguration werden vollständig dokumentiert und nachvollziehbar gehalten.
 
 ## Voraussetzungen
 
@@ -67,6 +74,10 @@ Public IP
 - Azure CLI (optional)
 - Azure Portal
 - Grundkenntnisse in Linux und Netzwerktechnik
+
+## Erwartetes Ergebnis
+
+Am Ende des Lernpfads entsteht eine kleine, aber gut strukturierte Azure-Testumgebung, die die wichtigsten Sicherheits- und Architekturprinzipien einer DMZ- und Private-Workload-Lösung demonstriert
 
 ## Hinweise
 
