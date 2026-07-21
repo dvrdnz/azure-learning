@@ -57,6 +57,7 @@ Internet
 | [02 – Compute-Deployment: Edge-VM und Web-VM](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/02_compute_deployment.md) | Bereitstellung von Rechenressourcen |
 | [03 – OS-Hardening: SSH, fail2ban, UFW](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/03_os_hardening.md) | Betriebssystem-Sicherheit |
 | [04 – Temporärer Internetzugang für die Web-VM: Function App, Managed Identity und NAT Gateway](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/04_function_app_managed_identity_nat_gateway.md) | Zugriff und Wartung für private Workloads |
+| [05 – Function-App-Update: Ephemere NAT-Ressourcen, Locking und asynchrone Verarbeitung](https://github.com/dvrdnz/azure-learning/blob/main/docs/01-dmz-private-workload-architecture/05_deploy_function_app_update.md) | Erweiterte Betriebslogik und ephemerer Wartungszugang |
 
 ## Architekturprinzipien
 
