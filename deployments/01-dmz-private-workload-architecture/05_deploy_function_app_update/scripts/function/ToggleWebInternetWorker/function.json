@@ -1,0 +1,12 @@
+{
+  "bindings": [
+    {
+      "type": "queueTrigger",
+      "direction": "in",
+      "name": "QueueItem",
+      "dataType": "string",
+      "queueName": "toggle-requests",
+      "connection": "AzureWebJobsStorage"
+    }
+  ]
+}

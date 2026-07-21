@@ -1,0 +1,17 @@
+{
+  "Name": "NAT Gateway Toggle Operator",
+  "IsCustom": true,
+  "Description": "Aktiviert und deaktiviert die NAT-Gateway-Zuordnung auf einem Subnetz im Wartungsmodus.",
+  "Actions": [
+    "Microsoft.Network/virtualNetworks/read",
+    "Microsoft.Network/virtualNetworks/write",
+    "Microsoft.Network/virtualNetworks/subnets/read",
+    "Microsoft.Network/virtualNetworks/subnets/write",
+    "Microsoft.Network/natGateways/read",
+    "Microsoft.Network/networkSecurityGroups/join/action"
+  ],
+  "NotActions": [],
+  "AssignableScopes": [
+    "/subscriptions/<subscription>/resourceGroups/rg-<project>-<environment>-<region>"
+  ]
+}
